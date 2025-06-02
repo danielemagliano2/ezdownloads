@@ -1,0 +1,11 @@
+# Node + Astro
+node_modules/
+dist/
+.cache/
+# Assets now on R2
+public/thumbnails/
+public/downloads/
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.env

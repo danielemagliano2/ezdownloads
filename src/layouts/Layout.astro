@@ -1,0 +1,84 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- SEO / social meta tags (optional) -->
+    <meta name="description" content="EZDownloads — curated Minecraft Bedrock addons" />
+
+    <!-- Google-font preload -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap"
+    />
+
+    <title>{title}</title>
+  </head>
+
+  <body class="bg-[--background] font-[Montserrat] text-[--white]">
+
+    <!-- ── Sticky glassy header ─────────────────────────────────────────── -->
+    <header
+      class="sticky top-0 z-50 w-full
+             bg-[#181818]/70 backdrop-blur-md
+             border-b border-white/10">
+      <div class="px-6 py-3 flex items-center">
+        <a href="/" class="block leading-none">
+          <img src="/logo.png" alt="EZDownloads Logo" class="h-20 w-auto" />
+        </a>
+      </div>
+    </header>
+
+    <!-- ── Main slot with original padding (restored) ───────────────────── -->
+    <main class="md:px-48 lg:px-20 px-9 py-6 relative">
+      <slot />
+    </main>
+
+    <!-- ── Footer with legal links ──────────────────────────────────────── -->
+    <footer class="text-center text-xs text-zinc-400 pb-8">
+      © {new Date().getFullYear()} EZDownloads&nbsp;·&nbsp;
+      <a href="/privacy">Privacy</a> ·
+      <a href="/cookies">Cookies</a> ·
+      <a href="/terms">Terms</a> ·
+      <a href="/legal">Legal</a>
+    </footer>
+  </body>
+</html>
+
+<!-- ── Global minimal dark theme tweaks ─────────────────────────────────── -->
+<style is:global>
+  :root {
+    --background: #101010;
+    --white: #dfdfdf;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: #a476ff;
+    color: #101010;
+  }
+
+  /* simple dark scrollbar */
+  ::-webkit-scrollbar { width: 14px; }
+  ::-webkit-scrollbar-track { background: #181818; }
+  ::-webkit-scrollbar-thumb { background: #303030; border-radius: 8px; }
+
+  * { scrollbar-width: thin; scrollbar-color: #303030 #181818; }
+</style>
