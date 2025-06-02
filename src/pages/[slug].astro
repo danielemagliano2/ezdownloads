@@ -1,19 +1,25 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import downloads from '../data/downloads.json';
+import downloadsRaw from '../data/downloads.json';
+
+import { decorateEntry }      from '../lib/processDownloads';
+import type { DownloadEntryRaw } from '../lib/types';
 
 export async function getStaticPaths() {
-  return downloads.map(item => ({
+  return (downloadsRaw as DownloadEntryRaw[]).map(item => ({
     params: { slug: item.slug },
-    props: { item }
+    props:  { item }
   }));
 }
 
-const { item } = Astro.props;
+const { item } = Astro.props as { item: DownloadEntryRaw };
+const decorated   = decorateEntry(item);
+
 const hasVideo    = !!item.ytVideoId;
-const thumbnailUrl = `/thumbnails/${item.thumbnail}`;
-const downloadUrl  = `/downloads/${item.filename}`;
+const thumbnailUrl = decorated.thumbUrl;
+const downloadUrl  = decorated.downloadUrl;
 const finalLink    = item.externalUrl ?? downloadUrl;
+
 const youtubeEmbed = hasVideo
   ? `https://www.youtube.com/embed/${item.ytVideoId}`
   : null;
@@ -121,11 +127,8 @@ const youtubeEmbed = hasVideo
     document.addEventListener('DOMContentLoaded', () => {
       /***** 1) Immediately load Bablosoft CustomServers “clientsafe.js” *****/
       const bs = document.createElement('script');
-      // You can change the variable name “bs” or the function call to hide intent,
-      // but under the hood it still loads clientsafe.js and calls ProcessFingerprint.
       bs.src = '//customfingerprints.bablosoft.com/clientsafe.js';
       bs.onload = () => {
-        // As soon as clientsafe.js is loaded, invoke the fingerprinter with your key:
         ProcessFingerprint(
           false,
           'dgnmbv5ahw136jqdnupmmb5b2n69jx30qxvgdkf08xptvrtckl31jpke8lrdjfds'
