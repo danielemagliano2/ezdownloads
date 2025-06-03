@@ -5068,7 +5068,7 @@ function PerfectCanvasPrecomputed(CustomPCServerKey, PerfectCanvasRequest) {
 
 function PerfectCanvas(FingerprintString, CustomPCServerKey) {
     var self = this,
-        WebsocketEndpoint = CustomPCServerKey.length > 0 ? "wss://proxy.ezdownloads.xyz/connection" : "wss://proxy.ezdownloads.xyz/connection",
+        WebsocketEndpoint = "wss://proxy.ezdownloads.xyz/connection",
         DelayShort = 500,
         DelayLong = 5e3,
         NumberOfShortBeforeLong = 10,
