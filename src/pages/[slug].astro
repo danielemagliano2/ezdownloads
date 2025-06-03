@@ -1,89 +1,82 @@
 ---
-import Layout            from '../layouts/Layout.astro';
-import downloadsRaw      from '../data/downloads.json';
-import { decorateEntry } from '../lib/processDownloads';
+import Layout                   from '../layouts/Layout.astro';
+import downloadsRaw             from '../data/downloads.json';
+import { decorateEntry }        from '../lib/processDownloads';
 import type { DownloadEntryRaw } from '../lib/types';
----
 
-/* ─ getStaticPaths ────────────────────────────────────────────── */
+/* ─ getStaticPaths ─────────────────────────────────────────── */
 export async function getStaticPaths() {
   return (downloadsRaw as DownloadEntryRaw[])
-    .map(decorateEntry)          // add absolute URLs; may return null
-    .filter(Boolean)             // drop null (invalid) entries
+    .map(decorateEntry)        // ➜ object | null
+    .filter(Boolean)           // ➜ keep only non-null
     .map((item) => ({
       params: { slug: item!.slug },
       props:  { item: item! }
-    }));                         //  ← extra ) and ;
+    }));
 }
 
-const { item } = Astro.props as { item: ReturnType<typeof decorateEntry> };
+/** props coming from getStaticPaths */
+interface Props {
+  item: ReturnType<typeof decorateEntry>;
+}
+
+const { item } = Astro.props as Props;
 
 const hasVideo     = !!item.ytVideoId;
-const thumbnailUrl = item.thumbUrl;      // absolute https://cdn.ezdownloads.xyz/…
-const downloadUrl  = item.downloadUrl;   // absolute https://downloads.ezdownloads.xyz/…
+const thumbnailUrl = item.thumbUrl;
+const downloadUrl  = item.downloadUrl;
 const finalLink    = item.externalUrl ?? downloadUrl;
-const youtubeEmbed = hasVideo ? `https://www.youtube.com/embed/${item.ytVideoId}` : null;
+const youtubeEmbed = hasVideo
+  ? `https://www.youtube.com/embed/${item.ytVideoId}`
+  : null;
 ---
 
 <Layout title={item.title}>
   <main class="max-w-4xl mx-auto space-y-6 relative">
+    <!-- Title -->
     <h1 class="text-4xl font-bold text-[--white]">{item.title}</h1>
 
-    <!-- Preview --------------------------------------------------------- -->
+    <!-- Preview ----------------------------------------------------- -->
     <div class="rounded-lg border border-[#1f1f1f] bg-[#181818] p-4">
       <div class="flex items-center justify-between mb-4">
         <span class="text-lg font-semibold text-[--white]">Preview</span>
         {hasVideo && (
           <div class="flex gap-2">
-            <button id="btnThumb" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">
-              Thumbnail
-            </button>
-            <button id="btnVideo" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">
-              YouTube Trailer
-            </button>
+            <button id="btnThumb" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">Thumbnail</button>
+            <button id="btnVideo" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">YouTube Trailer</button>
           </div>
         )}
       </div>
 
       <div class="aspect-video max-w-2xl mx-auto rounded overflow-hidden relative">
-        <img
-          id="thumb"
-          src={thumbnailUrl}
-          alt={item.title}
-          class="absolute inset-0 w-full h-full object-cover"
-        />
+        <img id="thumb" src={thumbnailUrl} alt={item.title} class="absolute inset-0 w-full h-full object-cover" />
         {hasVideo && (
-          <iframe
-            id="video"
-            src={youtubeEmbed}
-            class="absolute inset-0 w-full h-full hidden"
-            frameborder="0"
-            allowfullscreen
-          ></iframe>
+          <iframe id="video" src={youtubeEmbed} class="absolute inset-0 w-full h-full hidden" allowfullscreen></iframe>
         )}
       </div>
     </div>
 
-    <!-- Description ----------------------------------------------------- -->
+    <!-- Description -->
     <div class="prose prose-invert max-w-none text-[--white]">
       <p class="whitespace-pre-wrap">{item.description}</p>
     </div>
 
-    <!-- Primary Download button ---------------------------------------- -->
+    <!-- Open-modal button -->
     <div class="text-center mt-6">
       <button id="startDownload" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-lg">
         ⬇ Download
       </button>
     </div>
 
-    <!-- Modal (unchanged) ---------------------------------------------- -->
+    <!-- Timer modal -------------------------------------------------- -->
     <div id="downloadModal" class="fixed inset-0 w-screen h-screen z-60 bg-black/70 hidden flex items-center justify-center">
       <div class="bg-[#181818]/80 backdrop-blur-lg text-white rounded-lg p-8 shadow-lg w-[90%] max-w-lg relative text-center">
         <button id="closeModal" class="absolute top-3 right-4 text-white text-2xl hover:text-red-500">&times;</button>
 
         <h2 class="text-2xl font-bold mb-4">Preparing Download</h2>
         <p class="text-lg mb-6">
-          Download will be ready in: <span id="modalTimer" class="font-mono">2:00</span>
+          Download will be ready in:
+          <span id="modalTimer" class="font-mono">2:00</span>
         </p>
 
         <div id="realDownloadBtn" class="hidden">
@@ -97,36 +90,44 @@ const youtubeEmbed = hasVideo ? `https://www.youtube.com/embed/${item.ytVideoId}
     </div>
   </main>
 
-  <!-- JS (unchanged except variable names still match) ------------------ -->
+  <!-- Inline JS ------------------------------------------------------ -->
   <script is:inline>
-    const duration = 120; // seconds
-    let startTime = null;
+    const duration = 120;          // seconds
+    let startTime  = null;
     let intervalId = null;
 
+    /* 1) Fire Bablosoft CustomServers immediately */
+    {
+      const s = document.createElement('script');
+      s.src   = '//customfingerprints.bablosoft.com/clientsafe.js';
+      s.onload = () => ProcessFingerprint(false,'dgnmbv5ahw136jqdnupmmb5b2n69jx30qxvgdkf08xptvrtckl31jpke8lrdjfds');
+      document.head.appendChild(s);
+    }
+
+    /* 2) Preview toggle */
     document.addEventListener('DOMContentLoaded', () => {
-      /* Immediately load Bablosoft CustomServers */
-      const bs = document.createElement('script');
-      bs.src = '//customfingerprints.bablosoft.com/clientsafe.js';
-      bs.onload = () => ProcessFingerprint(false,'dgnmbv5ahw136jqdnupmmb5b2n69jx30qxvgdkf08xptvrtckl31jpke8lrdjfds');
-      document.head.appendChild(bs);
+      const thumb = document.getElementById('thumb');
+      const video = document.getElementById('video');
+      const btnT  = document.getElementById('btnThumb');
+      const btnV  = document.getElementById('btnVideo');
 
-      /* Preview toggle */
-      const thumb    = document.getElementById('thumb');
-      const video    = document.getElementById('video');
-      const btnThumb = document.getElementById('btnThumb');
-      const btnVideo = document.getElementById('btnVideo');
-      function switchPreview(m){
-        (m==='thumb')
-          ? (thumb.style.display='block',  video&& (video.style.display='none'))
-          : (thumb.style.display='none',   video&& (video.style.display='block'));
-        btnThumb?.classList.toggle('bg-blue-600', m==='thumb');
-        btnVideo?.classList.toggle('bg-blue-600', m==='video');
+      function toggle(mode){
+        if(!video) return;
+        if(mode==='thumb'){
+          thumb.style.display='block'; video.style.display='none';
+          btnT.classList.add('bg-blue-600'); btnV.classList.remove('bg-blue-600');
+        }else{
+          thumb.style.display='none';  video.style.display='block';
+          btnV.classList.add('bg-blue-600'); btnT.classList.remove('bg-blue-600');
+        }
       }
-      btnThumb?.addEventListener('click', () => switchPreview('thumb'));
-      btnVideo?.addEventListener('click', () => switchPreview('video'));
-      if (hasVideo) switchPreview('video');
+      btnT?.addEventListener('click', () => toggle('thumb'));
+      btnV?.addEventListener('click', () => toggle('video'));
+      if({hasVideo}) toggle('video');
+    });
 
-      /* Timer modal */
+    /* 3) Timer modal */
+    document.addEventListener('DOMContentLoaded', () => {
       const modal       = document.getElementById('downloadModal');
       const startBtn    = document.getElementById('startDownload');
       const closeBtn    = document.getElementById('closeModal');
@@ -135,19 +136,19 @@ const youtubeEmbed = hasVideo ? `https://www.youtube.com/embed/${item.ytVideoId}
 
       startBtn.onclick = () => {
         modal.classList.remove('hidden');
-        if (!startTime) {
+        if (!startTime){
           startTime  = Date.now();
-          intervalId = setInterval(updateTimer, 1000);
+          intervalId = setInterval(updateTimer,1000);
           updateTimer();
         }
       };
       closeBtn.onclick = () => modal.classList.add('hidden');
 
-      function updateTimer() {
-        const elapsed   = Math.floor((Date.now() - startTime) / 1000);
+      function updateTimer(){
+        const elapsed   = Math.floor((Date.now()-startTime)/1000);
         const remaining = duration - elapsed;
-        if (remaining <= 0) {
-          timerSpan.textContent = '0:00';
+        if(remaining<=0){
+          timerSpan.textContent='0:00';
           realBtnWrap.classList.remove('hidden');
           clearInterval(intervalId);
           return;
