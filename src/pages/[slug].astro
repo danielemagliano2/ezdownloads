@@ -1,31 +1,29 @@
 ---
-import Layout                   from '../layouts/Layout.astro';
-import downloadsRaw             from '../data/downloads.json';
-import { decorateEntry }        from '../lib/processDownloads';
+import Layout from '../layouts/Layout.astro';
+import downloadsRaw from '../data/downloads.json';
+import { decorateEntry } from '../lib/processDownloads';
 import type { DownloadEntryRaw } from '../lib/types';
 
-/* ─ getStaticPaths ─────────────────────────────────────────── */
 export async function getStaticPaths() {
   return (downloadsRaw as DownloadEntryRaw[])
-    .map(decorateEntry)        // ➜ object | null
-    .filter(Boolean)           // ➜ keep only non-null
+    .map(decorateEntry)
+    .filter(Boolean)
     .map((item) => ({
       params: { slug: item!.slug },
-      props:  { item: item! }
+      props: { item: item! }
     }));
 }
 
-/** props coming from getStaticPaths */
 interface Props {
   item: ReturnType<typeof decorateEntry>;
 }
 
 const { item } = Astro.props as Props;
 
-const hasVideo     = !!item.ytVideoId;
+const hasVideo = !!item.ytVideoId;
 const thumbnailUrl = item.thumbUrl;
-const downloadUrl  = item.downloadUrl;
-const finalLink    = item.externalUrl ?? downloadUrl;
+const downloadUrl = item.downloadUrl;
+const finalLink = item.externalUrl ?? downloadUrl;
 const youtubeEmbed = hasVideo
   ? `https://www.youtube.com/embed/${item.ytVideoId}`
   : null;
@@ -34,53 +32,87 @@ const youtubeEmbed = hasVideo
 <Layout title={item.title}>
   <main class="max-w-4xl mx-auto space-y-6 relative">
     <!-- Title -->
-    <h1 class="text-4xl font-bold text-[--white]">{item.title}</h1>
+    <h1 class="text-4xl font-bold text-white">{item.title}</h1>
 
-    <!-- Preview ----------------------------------------------------- -->
+    <!-- Preview -->
     <div class="rounded-lg border border-[#1f1f1f] bg-[#181818] p-4">
       <div class="flex items-center justify-between mb-4">
-        <span class="text-lg font-semibold text-[--white]">Preview</span>
+        <span class="text-lg font-semibold text-white">Preview</span>
         {hasVideo && (
           <div class="flex gap-2">
-            <button id="btnThumb" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">Thumbnail</button>
-            <button id="btnVideo" class="px-3 py-1 text-sm rounded border border-zinc-600 bg-zinc-700 text-white">YouTube Trailer</button>
+            <button id="btnThumb" class="px-4 py-2 text-sm rounded border border-zinc-600 bg-zinc-700 text-white md:px-3 md:py-1">
+              Thumbnail
+            </button>
+            <button id="btnVideo" class="px-4 py-2 text-sm rounded border border-zinc-600 bg-zinc-700 text-white md:px-3 md:py-1">
+              YouTube Trailer
+            </button>
           </div>
         )}
       </div>
 
       <div class="aspect-video max-w-2xl mx-auto rounded overflow-hidden relative">
-        <img id="thumb" src={thumbnailUrl} alt={item.title} class="absolute inset-0 w-full h-full object-cover" />
+        <img 
+          id="thumb" 
+          src={thumbnailUrl} 
+          alt={item.title} 
+          class="absolute inset-0 w-full h-full object-cover" 
+          loading="lazy"
+          width="800"
+          height="450"
+        />
         {hasVideo && (
-          <iframe id="video" src={youtubeEmbed} class="absolute inset-0 w-full h-full hidden" allowfullscreen></iframe>
+          <iframe 
+            id="video" 
+            src={youtubeEmbed} 
+            class="absolute inset-0 w-full h-full hidden" 
+            allowfullscreen
+            loading="lazy"
+          ></iframe>
         )}
       </div>
     </div>
 
     <!-- Description -->
-    <div class="prose prose-invert max-w-none text-[--white]">
+    <div class="prose prose-invert max-w-none text-white">
       <p class="whitespace-pre-wrap">{item.description}</p>
     </div>
 
-    <!-- Open-modal button -->
+    <!-- Download button -->
     <div class="text-center mt-6">
-      <button id="startDownload" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-lg">
+      <button 
+        id="startDownload" 
+        class="px-8 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-lg md:px-6 md:py-2"
+      >
         ⬇ Download
       </button>
     </div>
 
-    <!-- Timer modal -------------------------------------------------- -->
-    <div id="downloadModal" class="fixed inset-0 w-screen h-screen z-60 bg-black/70 hidden flex items-center justify-center">
+    <!-- Timer modal -->
+    <div 
+      id="downloadModal" 
+      class="fixed inset-0 w-screen h-screen bg-black/70 hidden items-center justify-center z-[999]"
+      style="touch-action: none;"
+    >
       <div class="bg-[#181818]/80 backdrop-blur-lg text-white rounded-lg p-8 shadow-lg w-[90%] max-w-lg relative text-center">
-        <button id="closeModal" class="absolute top-3 right-4 text-white text-2xl hover:text-red-500">&times;</button>
+        <button 
+          id="closeModal" 
+          class="absolute top-4 right-6 text-white text-4xl w-12 h-12 flex items-center justify-center hover:text-red-500"
+          aria-label="Close"
+        >
+          &times;
+        </button>
 
         <h2 class="text-2xl font-bold mb-4">Preparing Download</h2>
         <p class="text-lg mb-6">
           Download will be ready in:
-          <span id="modalTimer" class="font-mono">2:00</span>
+          <span id="modalTimer" class="font-mono block text-3xl mt-2">2:00</span>
         </p>
 
         <div id="realDownloadBtn" class="hidden">
-          <a href={finalLink} {...(item.externalUrl ? { target: '_blank' } : { download: true })}>
+          <a 
+            href={finalLink} 
+            {...(item.externalUrl ? { target: '_blank', rel: 'noopener' } : { download: true })}
+          >
             <button class="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-lg">
               ✅ Start Download
             </button>
@@ -90,5 +122,127 @@ const youtubeEmbed = hasVideo
     </div>
   </main>
 
+  <!-- Fingerprint script (must be kept) -->
   <script src="/assets/x/loader.obf.js" defer></script>
+  
+  <!-- Button functionality script -->
+  <script is:inline>
+    // Wait until both DOM is ready and fingerprint script has loaded
+    window.addEventListener('DOMContentLoaded', function() {
+      // Ensure fingerprint script is loaded before setting up buttons
+      if (typeof yourFingerprintFunction === 'function') {
+        // If fingerprint script has setup functions, run them first
+        yourFingerprintFunction();
+      }
+      
+      // Now setup button functionality
+      setupButtonInteractions();
+    });
+    
+    function setupButtonInteractions() {
+      // Elements
+      const btnThumb = document.getElementById('btnThumb');
+      const btnVideo = document.getElementById('btnVideo');
+      const thumb = document.getElementById('thumb');
+      const video = document.getElementById('video');
+      const startDownload = document.getElementById('startDownload');
+      const downloadModal = document.getElementById('downloadModal');
+      const closeModal = document.getElementById('closeModal');
+      const modalTimer = document.getElementById('modalTimer');
+      const realDownloadBtn = document.getElementById('realDownloadBtn');
+      
+      // Mobile-friendly event binding
+      function bindEvent(element, event, handler) {
+        element.addEventListener(event, handler, { passive: true });
+      }
+      
+      // Toggle between thumbnail and video
+      if (btnThumb && btnVideo && thumb && video) {
+        bindEvent(btnThumb, 'click', () => {
+          thumb.classList.remove('hidden');
+          video.classList.add('hidden');
+        });
+        
+        bindEvent(btnVideo, 'click', () => {
+          thumb.classList.add('hidden');
+          video.classList.remove('hidden');
+        });
+      }
+      
+      // Handle download button click
+      if (startDownload && downloadModal) {
+        bindEvent(startDownload, 'click', () => {
+          downloadModal.classList.remove('hidden');
+          document.documentElement.classList.add('modal-open');
+          
+          // Start countdown
+          let seconds = 120;
+          const timer = setInterval(() => {
+            seconds--;
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (modalTimer) {
+              modalTimer.textContent = `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+            }
+            
+            if (seconds <= 0) {
+              clearInterval(timer);
+              if (modalTimer && modalTimer.parentElement) {
+                modalTimer.parentElement.classList.add('hidden');
+              }
+              if (realDownloadBtn) {
+                realDownloadBtn.classList.remove('hidden');
+              }
+            }
+          }, 1000);
+        });
+      }
+      
+      // Close modal
+      if (closeModal) {
+        bindEvent(closeModal, 'click', () => {
+          if (downloadModal) {
+            downloadModal.classList.add('hidden');
+            document.documentElement.classList.remove('modal-open');
+          }
+        });
+      }
+      
+      // Close modal when clicking outside
+      if (downloadModal) {
+        bindEvent(downloadModal, 'click', (e) => {
+          if (e.target === downloadModal) {
+            downloadModal.classList.add('hidden');
+            document.documentElement.classList.remove('modal-open');
+          }
+        });
+      }
+    }
+  </script>
+
+  <style>
+    /* Mobile-first responsive design */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .prose p {
+        font-size: 1rem;
+      }
+      
+      #startDownload {
+        width: 100%;
+        padding: 1rem;
+      }
+    }
+    
+    /* Prevent scroll when modal is open */
+    :root.modal-open {
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 </Layout>
