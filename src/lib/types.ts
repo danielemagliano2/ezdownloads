@@ -11,4 +11,5 @@ export interface DownloadEntryRaw {
   thumbnail: string;  // e.g. "short-title-better-bedroc.jpg"
   date: string;       // e.g. "2025-06-01"
   ytVideoId?: string; // optional YouTube embed ID, if present
+  externalUrl?: string;
 }
