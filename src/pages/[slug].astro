@@ -3,16 +3,17 @@ import Layout            from '../layouts/Layout.astro';
 import downloadsRaw      from '../data/downloads.json';
 import { decorateEntry } from '../lib/processDownloads';
 import type { DownloadEntryRaw } from '../lib/types';
+---
 
 /* ─ getStaticPaths ────────────────────────────────────────────── */
 export async function getStaticPaths() {
-  return (downloadsRaw as DownloadEntryRaw[]).map(raw => {
-    const item = decorateEntry(raw); // adds .thumbUrl & .downloadUrl
-    return {
-      params: { slug: item.slug },
-      props:  { item }               // now “decorated”
-    };
-  });
+  return (downloadsRaw as DownloadEntryRaw[])
+    .map(decorateEntry)          // add absolute URLs; may return null
+    .filter(Boolean)             // drop null (invalid) entries
+    .map((item) => ({
+      params: { slug: item!.slug },
+      props:  { item: item! }
+    }));                         //  ← extra ) and ;
 }
 
 const { item } = Astro.props as { item: ReturnType<typeof decorateEntry> };
